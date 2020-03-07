@@ -29,12 +29,18 @@ function xr_promise_test(name, func, properties) {
   }, name, properties);
 }
 
+function xr_session_promise_test(
+    name, func, fakeDeviceInit, sessionMode, sessionInit, properties) {
+  xr_session_promise_test2(
+    name, func, fakeDeviceInit, sessionMode, sessionInit, properties, {}, {});
+}
+
 // A test function which runs through the common steps of requesting a session.
 // Calls the passed in test function with the session, the controller for the
 // device, and the test object.
 // Requires a webglCanvas on the page.
-function xr_session_promise_test(
-    name, func, fakeDeviceInit, sessionMode, sessionInit, properties) {
+function xr_session_promise_test2(
+    name, func, fakeDeviceInit, sessionMode, sessionInit, properties, glcontextProperties, gllayerProperties) {
   let testDeviceController;
   let testSession;
   let sessionObjects = {};
@@ -47,7 +53,7 @@ function xr_session_promise_test(
       Promise.reject('xr_session_promise_test requires a canvas on the page!');
     }, name, properties);
   }
-  let gl = webglCanvas.getContext('webgl', {alpha: false, antialias: false});
+  let gl = webglCanvas.getContext('webgl', {alpha: false, antialias: false, ...glcontextProperties});
   sessionObjects.gl = gl;
 
   xr_promise_test(
@@ -77,7 +83,7 @@ function xr_session_promise_test(
                             .then((session) => {
                               testSession = session;
                               session.mode = sessionMode;
-                              let glLayer = new XRWebGLLayer(session, gl);
+                              let glLayer = new XRWebGLLayer(session, gl, gllayerProperties);
                               glLayer.context = gl;
                               // Session must have a baseLayer or frame requests
                               // will be ignored.
