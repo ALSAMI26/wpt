@@ -6,6 +6,8 @@
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="resources/nfc-helpers.js"></script>
+<script src="/resources/testdriver.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
 <script>
 
 "use strict";
@@ -26,6 +28,7 @@ function waitSyntaxErrorPromise(t, scan_options) {
 }
 
 promise_test(async t => {
+  await test_driver.set_permission({ name: 'nfc' }, 'granted', false);
   const reader = new NDEFReader();
   const promises = [];
   invalid_signals.forEach(invalid_signal => {
@@ -36,11 +39,7 @@ promise_test(async t => {
 }, "Test that NDEFReader.scan rejects if signal is not an AbortSignal.");
 
 promise_test(async t => {
-  if (window.testRunner) {
-    // Deny nfc permissions for Chromium testrunner.
-    window.testRunner.setPermission('nfc', 'denied',
-                                    location.origin, location.origin);
-  }
+  await test_driver.set_permission({ name: 'nfc' }, 'denied', false);
   const reader = new NDEFReader();
   await promise_rejects_dom(t, 'NotAllowedError', reader.scan());
 }, "NDEFReader.scan should fail if user permission is not granted.");
@@ -49,10 +48,6 @@ promise_test(async t => {
 // implementation for NFC Mojo interface.
 nfc_test(async (t, mockNFC) => {
   mockNFC.simulateClosedPipe();
-  if (window.testRunner) {
-    window.testRunner.setPermission('nfc', 'granted',
-                                    location.origin, location.origin);
-  }
   const reader = new NDEFReader();
   const readerWatcher = new EventWatcher(t, reader, ["reading", "error"]);
   const promise = readerWatcher.wait_for("error").then(event => {

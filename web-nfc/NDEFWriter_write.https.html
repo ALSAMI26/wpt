@@ -6,6 +6,8 @@
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="resources/nfc-helpers.js"></script>
+<script src="/resources/testdriver.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
 <script>
 
 "use strict";
@@ -124,6 +126,7 @@ const invalid_signals = [
 ];
 
 promise_test(async t => {
+  await test_driver.set_permission({ name: 'nfc' }, 'granted', false);
   const writer = new NDEFWriter();
   const promises = [];
   invalid_type_messages.forEach(message => {
@@ -134,6 +137,7 @@ promise_test(async t => {
 }, "Test that promise is rejected with TypeError if NDEFMessageSource is invalid.");
 
 promise_test(async t => {
+  await test_driver.set_permission({ name: 'nfc' }, 'granted', false);
   const writer = new NDEFWriter();
   const promises = [];
   invalid_syntax_messages.forEach(message => {
@@ -145,11 +149,7 @@ promise_test(async t => {
  invalid records.");
 
 promise_test(async t => {
-  if (window.testRunner) {
-    // Deny nfc permissions for Chromium testrunner.
-    window.testRunner.setPermission('nfc', 'denied',
-                                    location.origin, location.origin);
-  }
+  await test_driver.set_permission({ name: 'nfc' }, 'denied', false);
   const writer = new NDEFWriter();
   await promise_rejects_dom(t, 'NotAllowedError', writer.write(test_text_data));
 }, 'NDEFWriter.write should fail if user permission is not granted.');
@@ -158,11 +158,6 @@ promise_test(async t => {
 // implementation for NFC Mojo interface.
 nfc_test(async (t, mockNFC) => {
   mockNFC.simulateClosedPipe();
-  if (window.testRunner) {
-    // Deny nfc permissions for Chromium testrunner.
-    window.testRunner.setPermission('nfc', 'granted',
-                                    location.origin, location.origin);
-  }
   const writer = new NDEFWriter();
   await promise_rejects_dom(t, 'NotSupportedError', writer.write(test_text_data));
 }, 'NDEFWriter.write should fail if no implementation for NFC Mojo interface is available.');
@@ -198,6 +193,7 @@ promise_test(async t => {
 }, "NDEFWriter.write should fail if signal's aborted flag is set.");
 
 promise_test(async t => {
+  await test_driver.set_permission({ name: 'nfc' }, 'granted', false);
   const writer = new NDEFWriter();
   const promises = [];
   invalid_signals.forEach(invalid_signal => {
@@ -235,14 +231,10 @@ nfc_test(async (t, mockNFC) => {
 }, "NDEFWriter.write should fail when NFC HW is not supported.");
 
 promise_test(async () => {
+  await test_driver.set_permission({ name: 'nfc' }, 'granted', false);
   await new Promise((resolve,reject) => {
     const iframe = document.createElement('iframe');
     iframe.srcdoc = `<script>
-                      if (window.testRunner) {
-                        // Grant nfc permissions for Chromium testrunner.
-                        window.testRunner.setPermission('nfc', 'granted',
-                                                        location.origin, location.origin);
-                      }
                       window.onmessage = message => {
                         if (message.data === "Ready") {
                           const onSuccess = () => {
